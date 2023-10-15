@@ -74,14 +74,16 @@ def get_movies() -> list[Movie]:
 
 @app.get('/movies{id}', tags=['Movies'])
 def get_movie(id: int = Path(ge = 1, le= 2000)):
-        movie = [movie for movie in movies if movie['id'] == id]
-        return JSONResponse(content=movie[0], status_code=200)  if movie else JSONResponse(content={'message': 'Movie not found'}, status_code=status.HTTP_204_NO_CONTENT)
+        db = Session()
+        movie_by_id = db.query(MovieModel).filter(MovieModel.id == id).first()
+        return JSONResponse(content=jsonable_encoder(movie_by_id), status_code=200)  if movie_by_id else  JSONResponse(content={'message': 'Movie not found'}, status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.get('/movies/', tags=['Movies'], response_model=list[Movie])
 def get_movies(category: str = Query(min_length=5 , max_length=20) ) -> list[Movie]:
-    movies_by_category  = [movie for movie in movies if movie['category'] == category]
-    return JSONResponse(content=movies_by_category, status_code=status.HTTP_200_OK) if movies_by_category else JSONResponse(content={'message': 'Movie not found'}, status_code=status.HTTP_204_NO_CONTENT)
+    db = Session()
+    movies_by_category  = db.query(MovieModel).filter(MovieModel.category == category).all()
+    return JSONResponse(content=jsonable_encoder(movies_by_category), status_code=status.HTTP_200_OK) if movies_by_category else JSONResponse(content={'message': 'Movie not found'}, status_code=status.HTTP_204_NO_CONTENT)
 
 @app.post('/movies', tags=['Movies'], response_model=dict)
 def create_movie(movie : Movie) -> dict:
@@ -94,24 +96,28 @@ def create_movie(movie : Movie) -> dict:
 
 @app.put('/movies/{id}', tags=['Movies'])
 def update_movie(id : int, movie :Movie):
-    find_movie = [find_movie for find_movie in movies if find_movie['id'] == id]
-    update = {
-        'title': movie.title,
-        'overview': movie.overview,
-        'year': movie.year,
-        'rating': movie.rating,
-        'category': movie.category
-        }
-    find_movie[0].update(update)
-    return find_movie[0]
+    db = Session()
+    find_movie = db.query(MovieModel).filter(MovieModel.id == id).first()
+    find_movie.title = movie.title
+    find_movie.overview = movie.overview
+    find_movie.year = movie.year
+    find_movie.rating = movie.rating
+    find_movie.category = movie.category   
+    
+    db.commit()  
+    movie_by_id = db.query(MovieModel).filter(MovieModel.id == id).first()
+    return JSONResponse(content=jsonable_encoder(movie_by_id), status_code=200)  if movie_by_id else JSONResponse(content={'message': 'Movie not found'}, status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.delete('/movies/{id}', tags=['Movies'], response_model=dict)
 def delete_movie(id : int) -> dict:
-    movie = [movie for movie in movies if movie['id'] == id]
-    if movie == []:
+    db = Session()
+    movie = db.query(MovieModel).filter(MovieModel.id == id).first()
+    if not movie:
         return {'message': 'Movie not found'}
-    movies.remove(movie[0])
+    #delete movie
+    db.delete(movie)
+    db.commit()    
     return {'message': 'Movie deleted successfully'}
 
 if __name__ == "__main__":
