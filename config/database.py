@@ -4,14 +4,17 @@ from sqlalchemy.orm.session import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 
-
-sqlite_file_name = "database.sqlite"
+'''
+config for postgresql
+DATABASE_URL="postgresql+psycopg2://user:pasword@localhost:5432/database_name"
+'''
+sqlite_file_name = "../database.sqlite"
 base_dir = os.path.dirname(os.path.realpath(__file__))
 
 database_url = f"sqlite:///{os.path.join(base_dir, sqlite_file_name)}"
 
 engine = create_engine(database_url, echo=True)
 
-session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=engine)
 
-base = declarative_base()
+Base = declarative_base()
