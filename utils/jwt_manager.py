@@ -6,5 +6,5 @@ def create_token(data) -> str:
     return token
 
 def validate_token(token) -> str:
-    data : dict = decode(token, key = "my_secret_key", algorithms=['HS256'])
-    return data
+    data : dict = decode(token, key = "my_secret_key", algorithms=['HS256']) # type: ignore
+    return data # type: ignore
